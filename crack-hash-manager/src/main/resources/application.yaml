@@ -1,0 +1,10 @@
+spring:
+  application:
+    name: crack-hash-manager
+
+# Настройки сервиса
+application:
+  number-workers: 2
+  alphabet: "abcdefghijklmnopqrstuvwxyz"
+  domain-worker: "http://localhost:8081"
+  processing-time: 60 # Время в секундах

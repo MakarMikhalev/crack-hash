@@ -1,0 +1,34 @@
+networks:
+  crack_hash:
+    driver: bridge
+
+services:
+  crack-hash-worker:
+    container_name: crack-hash-worker
+    image: crack-hash-worker
+    restart: always
+    environment:
+      APPLICATION_DOMAIN-MANAGER: "http://crack-hash-manager:8080"
+    ports:
+      - "8081:8081"
+    build:
+      context: ./crack-hash-worker
+      dockerfile: ./Dockerfile
+    networks:
+      - crack_hash
+
+  crack-hash-manager:
+    container_name: crack-hash-manager
+    image: crack-hash-manager
+    restart: always
+    ports:
+      - "8080:8080"
+    build:
+      context: ./crack-hash-manager
+      dockerfile: ./Dockerfile
+    environment:
+      APPLICATION_DOMAIN-WORKER: "http://crack-hash-worker:8081"
+    depends_on:
+      - crack-hash-worker
+    networks:
+      - crack_hash
