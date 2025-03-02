@@ -7,7 +7,6 @@ import ru.nsu.fit.crack.hash.crackhashworker.dto.CrackHashWorkerResponse;
 import ru.nsu.fit.crack.hash.crackhashworker.task.CrackHashTask;
 
 import java.util.List;
-import java.util.UUID;
 
 @UtilityClass
 public class TaskMapper {

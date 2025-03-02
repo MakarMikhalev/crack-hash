@@ -18,13 +18,13 @@ import java.util.concurrent.TimeUnit;
 @Component
 @RequiredArgsConstructor
 public class TaskTimeoutScheduler implements ApplicationRunner {
-    private final TaskService taskService;
+    private final TaskService taskWorkerService;
     private final ApplicationProperties applicationProperties;
     private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
 
     @Override
     public void run(ApplicationArguments args) {
-        scheduler.scheduleAtFixedRate(() -> taskService.getTasks().values()
+        scheduler.scheduleAtFixedRate(() -> taskWorkerService.getTasks().values()
             .stream()
             .filter(task -> task.getTaskStatus() == TaskStatus.IN_PROGRESS)
             .forEach(ticket -> {

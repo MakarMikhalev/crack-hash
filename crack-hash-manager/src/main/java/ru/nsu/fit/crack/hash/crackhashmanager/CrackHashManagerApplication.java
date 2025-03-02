@@ -8,7 +8,6 @@ import ru.nsu.fit.crack.hash.crackhashmanager.configuration.properties.Applicati
 @SpringBootApplication
 @EnableConfigurationProperties(ApplicationProperties.class)
 public class CrackHashManagerApplication {
-
     public static void main(String[] args) {
         SpringApplication.run(CrackHashManagerApplication.class, args);
     }

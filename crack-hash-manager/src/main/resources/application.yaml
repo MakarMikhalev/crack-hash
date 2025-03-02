@@ -4,7 +4,10 @@ spring:
 
 # Настройки сервиса
 application:
-  number-workers: 2
-  alphabet: "abcdefghijklmnopqrstuvwxyz"
-  domain-worker: "http://localhost:8081"
+  number-workers: 1
+  alphabet: "abcdefghijklmnopqrstuvwxyz1234567"
   processing-time: 60 # Время в секундах
+  size-queue: 10
+  domain-workers:
+    - "http://localhost:8081"
+    - "http://localhost:8082"

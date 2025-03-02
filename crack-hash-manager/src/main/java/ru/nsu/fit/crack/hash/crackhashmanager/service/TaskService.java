@@ -2,9 +2,11 @@ package ru.nsu.fit.crack.hash.crackhashmanager.service;
 
 import jakarta.annotation.Nonnull;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 import ru.nsu.fit.crack.hash.crackhashmanager.configuration.properties.ApplicationProperties;
+import ru.nsu.fit.crack.hash.crackhashmanager.dto.client.HashRequestDto;
 import ru.nsu.fit.crack.hash.crackhashmanager.model.Task;
 import ru.nsu.fit.crack.hash.crackhashmanager.model.enums.TaskStatus;
 
@@ -13,31 +15,19 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Service
+@RequiredArgsConstructor
 public class TaskService {
     @Getter
     private final ConcurrentHashMap<UUID, Task> tasks = new ConcurrentHashMap<>();
     private final ApplicationProperties applicationProperties;
 
-    public TaskService(ApplicationProperties applicationProperties) {
-        this.applicationProperties = applicationProperties;
-
-        UUID uuid1 = UUID.fromString("f8062f6f-0bef-4fe2-b1ee-462767d1cca3");
-        tasks.put(uuid1, new Task(TaskStatus.IN_PROGRESS, "2eh900921"));
-
-        UUID uuid2 = UUID.fromString("d8062f6f-0bef-4fe2-b1ee-462767d1cca3");
-        tasks.put(uuid2, new Task(TaskStatus.ERROR, "2eh900921"));
-
-        UUID uuid3 = UUID.fromString("c8062f6f-0bef-4fe2-b1ee-462767d1cca3");
-        tasks.put(uuid3, new Task(TaskStatus.READY, "2eh900921"));
-    }
-
-    public Mono<Task> createTask(String hash) {
-        return Mono.fromSupplier(() -> new Task(TaskStatus.IN_PROGRESS, hash))
+    public Mono<Task> createTask(HashRequestDto request) {
+        return Mono.fromSupplier(() -> new Task(TaskStatus.IN_PROGRESS, request.hash(), request.maxLength()))
             .doOnNext(task -> tasks.put(task.getId(), task));
     }
 
     public void update(UUID id, List<String> words) {
-        tasks.merge(id, new Task(TaskStatus.ERROR, tasks.get(id).getHash()), (oldValue, newValue) -> {
+        tasks.merge(id, new Task(TaskStatus.ERROR, "", 0), (oldValue, newValue) -> {
             if (oldValue.getTaskStatus() == TaskStatus.IN_PROGRESS) {
                 oldValue.incrementAcknowledge();
                 oldValue.addWords(words);

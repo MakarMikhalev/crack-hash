@@ -1,5 +1,3 @@
 application:
   domain-manager: "http://localhost:8080"
   processing-time: 60 # Время в секундах
-server:
-  port: 8081

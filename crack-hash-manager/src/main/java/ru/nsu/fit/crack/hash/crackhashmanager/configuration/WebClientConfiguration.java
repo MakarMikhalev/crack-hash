@@ -11,7 +11,6 @@ import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.netty.http.client.HttpClient;
 import reactor.netty.tcp.TcpClient;
-import ru.nsu.fit.crack.hash.crackhashmanager.configuration.properties.ApplicationProperties;
 
 import java.util.concurrent.TimeUnit;
 
@@ -19,13 +18,10 @@ import java.util.concurrent.TimeUnit;
 @Configuration
 @RequiredArgsConstructor
 public class WebClientConfiguration {
-    private final ApplicationProperties applicationProperties;
-
     public static final int TIMEOUT = 60;
 
     @Bean
     public WebClient webClientWithTimeout() {
-        log.info("URL WORKER {}", applicationProperties.domainWorker());
         final var tcpClient = TcpClient
             .create()
             .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, TIMEOUT)
@@ -35,7 +31,6 @@ public class WebClientConfiguration {
             });
 
         return WebClient.builder()
-            .baseUrl(applicationProperties.domainWorker())
             .clientConnector(new ReactorClientHttpConnector(HttpClient.from(tcpClient)))
             .build();
     }

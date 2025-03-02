@@ -11,7 +11,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
-import reactor.core.publisher.Mono;
 import ru.nsu.fit.crack.hash.crackhashmanager.client.WorkerClient;
 import ru.nsu.fit.crack.hash.crackhashmanager.controller.ClientController;
 import ru.nsu.fit.crack.hash.crackhashmanager.dto.client.HashRequestDto;
@@ -49,9 +48,8 @@ class ClientControllerTest {
     }
 
     private AutoCloseable mockWorkClient() {
-        Mockito.when(workerClient.send(Mockito.any()))
-            .thenReturn(Mono.empty());
+        Mockito.doNothing().when(workerClient).send(Mockito.any(), Mockito.any());
         return () ->
-            Mockito.verify(workerClient, Mockito.times(4)).send(Mockito.any());
+            Mockito.verify(workerClient, Mockito.times(4)).send(Mockito.any(), Mockito.any());
     }
 }

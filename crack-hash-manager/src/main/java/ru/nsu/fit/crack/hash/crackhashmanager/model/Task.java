@@ -11,13 +11,15 @@ import java.util.UUID;
 @Getter
 public class Task {
     private final String hash;
+    private final int maxLength;
     private TaskStatus taskStatus;
     private final UUID id = UUID.randomUUID();
     private final Instant created = Instant.now();
     private int acknowledge = 0;
     private final List<String> words = new ArrayList<>();
 
-    public Task(TaskStatus taskStatus, String hash) {
+    public Task(TaskStatus taskStatus, String hash, int maxLength) {
+        this.maxLength = maxLength;
         this.taskStatus = taskStatus;
         this.hash = hash;
     }

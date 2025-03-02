@@ -2,21 +2,43 @@ networks:
   crack_hash:
     driver: bridge
 
-services:
-  crack-hash-worker:
-    container_name: crack-hash-worker
+services:      
+  x-crack-hash-worker-template: &worker-template
     image: crack-hash-worker
     restart: always
-    environment:
-      APPLICATION_DOMAIN-MANAGER: "http://crack-hash-manager:8080"
-    ports:
-      - "8081:8081"
     build:
       context: ./crack-hash-worker
       dockerfile: ./Dockerfile
     networks:
       - crack_hash
 
+  crack-hash-worker-1:
+    <<: *worker-template
+    container_name: crack-hash-worker-1
+    environment:
+      APPLICATION_DOMAIN-MANAGER: "http://crack-hash-manager:8080"
+      SERVER_PORT: 8081
+    ports:
+      - "8081:8081"
+      
+  crack-hash-worker-2:
+    <<: *worker-template
+    container_name: crack-hash-worker-2
+    environment:
+      APPLICATION_DOMAIN-MANAGER: "http://crack-hash-manager:8080"
+      SERVER_PORT: 8082
+    ports:
+      - "8082:8082" 
+      
+  crack-hash-worker-3:
+    <<: *worker-template
+    container_name: crack-hash-worker-3
+    environment:
+      APPLICATION_DOMAIN-MANAGER: "http://crack-hash-manager:8080"
+      SERVER_PORT: 8083
+    ports:
+      - "8083:8083"
+      
   crack-hash-manager:
     container_name: crack-hash-manager
     image: crack-hash-manager
@@ -27,8 +49,11 @@ services:
       context: ./crack-hash-manager
       dockerfile: ./Dockerfile
     environment:
-      APPLICATION_DOMAIN-WORKER: "http://crack-hash-worker:8081"
+      APPLICATION_DOMAIN-WORKERS: "http://crack-hash-worker-1:8081,http://crack-hash-worker-2:8082,http://crack-hash-worker-3:8083"
+      APPLICATION_NUMBER_WORKERS: 3
     depends_on:
-      - crack-hash-worker
+      - crack-hash-worker-1
+      - crack-hash-worker-2
+      - crack-hash-worker-3
     networks:
       - crack_hash
