@@ -9,6 +9,9 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 @Builder
 public record CrackHashTask(
@@ -22,28 +25,46 @@ public record CrackHashTask(
 
     @Override
     public List<String> call() {
-        /* Шаг 1: Подсчёт общего количества возможных слов */
+        // Шаг 1: Подсчёт общего количества возможных слов
         final int alphabetSize = alphabet.size();
+        final int totalWords = (int) ((Math.pow(alphabetSize, maxLength + 1) - alphabetSize) / (alphabetSize - 1));
 
-        final int countWord = (int) ((Math.pow(alphabetSize, maxLength + 1) - alphabetSize) / (alphabetSize - 1));
-        // Определяем базовый размер части
-        final int remainder = countWord % partCount;
-        final int partSize = countWord / partCount;
+        // Шаг 2: Определение диапазона слов для текущего воркера
+        final int partSize = totalWords / partCount;
+        final int remainder = totalWords % partCount;
         final int offset = partSize * partNumber + Math.min(partNumber, remainder);
-        return Generator.permutation(alphabet)
-            .withRepetitions(maxLength)
-            .stream()
-            .skip(offset)
-            .limit(partSize + (partNumber < remainder ? 1 : 0))
-            .map(word -> String.join("", word))
-            .filter(word -> hash.equals(this.calcHash(String.join("", word))))
+        final int limit = partSize + (partNumber < remainder ? 1 : 0);
+
+        // Шаг 3: Генерация и фильтрация слов
+        AtomicInteger atomicOffset = new AtomicInteger(offset);
+        AtomicInteger atomicLimit = new AtomicInteger(limit);
+       return IntStream.rangeClosed(1, maxLength)
+            .boxed()
+            .filter(v -> atomicLimit.get() > 0)
+            .flatMap(length -> {
+                final int wordsOfCurrentLength = (int) Math.pow(alphabet.size(), length);
+                final int wordsToProcess = Math.min(wordsOfCurrentLength, atomicLimit.get());
+                Stream<String> wordsStream = Generator.permutation(alphabet)
+                    .withRepetitions(length)
+                    .stream()
+                    .skip(atomicOffset.get())
+                    .limit(wordsToProcess)
+                    .map(word -> String.join("", word))
+                    .filter(word -> hash.equals(calcHash(word)));
+                atomicLimit.addAndGet(-wordsToProcess);
+                return wordsStream;
+            })
+            .limit(atomicLimit.get())
             .toList();
     }
 
+    /**
+     * Вычисляет хэш строки с использованием алгоритма MD5.
+     */
     @Nonnull
     private String calcHash(String word) {
         try {
-            MessageDigest md = MessageDigest.getInstance(ALGORITHM_HASH);
+            MessageDigest md = MessageDigest.getInstance("MD5");
             byte[] hashInBytes = md.digest(word.getBytes());
             StringBuilder hexString = new StringBuilder();
             for (byte b : hashInBytes) {

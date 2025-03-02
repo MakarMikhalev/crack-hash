@@ -51,6 +51,7 @@ services:
     environment:
       APPLICATION_DOMAIN-WORKERS: "http://crack-hash-worker-1:8081,http://crack-hash-worker-2:8082,http://crack-hash-worker-3:8083"
       APPLICATION_NUMBER_WORKERS: 3
+      APPLICATION_ALPHABET: "abcdefghijklmnopqrstuvwxyz"
     depends_on:
       - crack-hash-worker-1
       - crack-hash-worker-2

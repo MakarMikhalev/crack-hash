@@ -47,6 +47,7 @@ public class ManagerService {
         executorService.submit(() -> {
             while (!Thread.currentThread().isInterrupted()) {
                 try {
+                    log.info("Обработка нового запроса");
                     distributionService.distribution(queue.take());
                 } catch (InterruptedException e) {
                     log.warn("Failed to complete task");
