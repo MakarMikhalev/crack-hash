@@ -1,6 +1,7 @@
 package ru.nsu.fit.crack.hash.crackhashmanager.controller;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -17,6 +18,7 @@ import ru.nsu.fit.crack.hash.crackhashmanager.service.TaskService;
 
 import java.util.UUID;
 
+@Slf4j
 @RequiredArgsConstructor
 @RestController
 public class ClientController {
@@ -25,11 +27,18 @@ public class ClientController {
 
     @PostMapping("/api/hash/crack")
     public ResponseEntity<Mono<IdResponseDto>> hashHacking(@RequestBody HashRequestDto hashRequestDto) {
+        log.info("hashHacking {}", hashRequestDto);
         return ResponseEntity.ok(managerService.addTask(hashRequestDto));
     }
 
     @GetMapping("/api/hash/status/{requestId}")
     public ResponseEntity<Mono<Task>> getTask(@PathVariable UUID requestId) {
+        log.info("get task request id {}", requestId);
         return ResponseEntity.ok(taskWorkerService.getTask(requestId));
+    }
+
+    @GetMapping
+    public ResponseEntity<Void> healChecker() {
+        return ResponseEntity.ok().build();
     }
 }

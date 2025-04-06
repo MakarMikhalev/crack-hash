@@ -1,8 +1,29 @@
+version: '3.8'
+
 networks:
   crack_hash:
     driver: bridge
 
-services:      
+volumes:
+  mongo1-data:
+  mongo2-data:
+  mongo3-data:
+
+services:
+  x-mongodb-template: &mongodb-template
+    image: mongo
+    restart: always
+    networks:
+      - crack_hash
+    command: [ "mongod", "--bind_ip_all", "--replSet", "_replica_set_crack_hash" ]
+    healthcheck:
+      test: echo "try { rs.status() } catch (err) { rs.initiate({_id:'rs0',members:[{_id:0,host:'mongodb-1:27017',priority:1},{_id:1,host:'mongodb-2:27017',priority:0.5},{_id:2,host:'mongodb-3:27017',priority:0.5}]}) }" | mongosh --port 27017 --quiet
+      interval: 5s
+      timeout: 30s
+      start_period: 0s
+      start_interval: 1s
+      retries: 30
+
   x-crack-hash-worker-template: &worker-template
     image: crack-hash-worker
     restart: always
@@ -11,34 +32,68 @@ services:
       dockerfile: ./Dockerfile
     networks:
       - crack_hash
+    depends_on:
+      crack-hash-manager:
+        condition: service_healthy
 
-  crack-hash-worker-1:
-    <<: *worker-template
-    container_name: crack-hash-worker-1
-    environment:
-      APPLICATION_DOMAIN-MANAGER: "http://crack-hash-manager:8080"
-      SERVER_PORT: 8081
+  mongodb-1:
+    <<: *mongodb-template
+    container_name: mongodb-1
     ports:
-      - "8081:8081"
-      
-  crack-hash-worker-2:
-    <<: *worker-template
-    container_name: crack-hash-worker-2
-    environment:
-      APPLICATION_DOMAIN-MANAGER: "http://crack-hash-manager:8080"
-      SERVER_PORT: 8082
+      - "27017:27017"
+
+  mongodb-2:
+    <<: *mongodb-template
+    container_name: mongodb-2
     ports:
-      - "8082:8082" 
-      
-  crack-hash-worker-3:
-    <<: *worker-template
-    container_name: crack-hash-worker-3
-    environment:
-      APPLICATION_DOMAIN-MANAGER: "http://crack-hash-manager:8080"
-      SERVER_PORT: 8083
+      - "27018:27017"
+
+  mongodb-3:
+    <<: *mongodb-template
+    container_name: mongodb-3
     ports:
-      - "8083:8083"
-      
+      - "27019:27017"
+
+  mongo-init:
+    image: mongo
+    restart: "no"
+    depends_on:
+      mongodb-1:
+        condition: service_healthy
+      mongodb-2:
+        condition: service_healthy
+      mongodb-3:
+        condition: service_healthy
+    networks:
+      - crack_hash
+    command: >
+      mongosh --host mongodb-1:27017 --eval '
+          config = {
+            "_id" : "_replica_set_crack_hash",
+            "members" : [
+              { "_id" : 0, "host" : "mongodb-1:27017", "priority": 2},
+              { "_id" : 1, "host" : "mongodb-2:27017", "priority": 1},
+              { "_id" : 2, "host" : "mongodb-3:27017", "priority": 0}
+            ]
+          };
+          rs.initiate(config);
+      '
+
+  crack-hash-rabbitmq:
+    image: rabbitmq:3.10.7-management
+    container_name: crack-hash-rabbitmq
+    restart: always
+    healthcheck:
+      test: [ "CMD-SHELL", "rabbitmq-diagnostics ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - crack_hash
+
   crack-hash-manager:
     container_name: crack-hash-manager
     image: crack-hash-manager
@@ -53,8 +108,49 @@ services:
       APPLICATION_NUMBER_WORKERS: 3
       APPLICATION_ALPHABET: "abcdefghijklmnopqrstuvwxyz"
     depends_on:
-      - crack-hash-worker-1
-      - crack-hash-worker-2
-      - crack-hash-worker-3
+      crack-hash-rabbitmq:
+        condition: service_healthy
+      mongodb-1:
+        condition: service_healthy
+      mongodb-2:
+        condition: service_healthy
+      mongodb-3:
+        condition: service_healthy
     networks:
       - crack_hash
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/actuator/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  crack-hash-worker-1:
+    <<: *worker-template
+    container_name: crack-hash-worker-1
+    environment:
+      APPLICATION_DOMAIN-MANAGER: "http://crack-hash-manager:8080"
+      SERVER_PORT: 8081
+    ports:
+      - "8081:8081"
+
+  crack-hash-worker-2:
+    <<: *worker-template
+    container_name: crack-hash-worker-2
+    environment:
+      APPLICATION_DOMAIN-MANAGER: "http://crack-hash-manager:8080"
+      SERVER_PORT: 8082
+    ports:
+      - "8082:8082"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  crack-hash-worker-3:
+    <<: *worker-template
+    container_name: crack-hash-worker-3
+    environment:
+      APPLICATION_DOMAIN-MANAGER: "http://crack-hash-manager:8080"
+      SERVER_PORT: 8083
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "8083:8083"
