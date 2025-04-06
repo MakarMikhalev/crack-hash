@@ -4,10 +4,11 @@ import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import ru.nsu.fit.crack.hash.crackhashmanager.configuration.properties.ApplicationProperties;
 import ru.nsu.fit.crack.hash.crackhashmanager.model.enums.TaskStatus;
-import ru.nsu.fit.crack.hash.crackhashmanager.service.TaskService;
+import ru.nsu.fit.crack.hash.crackhashmanager.repository.TaskRepository;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -18,13 +19,13 @@ import java.util.concurrent.TimeUnit;
 @Component
 @RequiredArgsConstructor
 public class TaskTimeoutScheduler implements ApplicationRunner {
-    private final TaskService taskWorkerService;
     private final ApplicationProperties applicationProperties;
     private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
+    private final TaskRepository taskRepository;
 
     @Override
     public void run(ApplicationArguments args) {
-        scheduler.scheduleAtFixedRate(() -> taskWorkerService.getTasks().values()
+        scheduler.scheduleAtFixedRate(() -> taskRepository.findAll()
             .stream()
             .filter(task -> task.getTaskStatus() == TaskStatus.IN_PROGRESS)
             .forEach(ticket -> {

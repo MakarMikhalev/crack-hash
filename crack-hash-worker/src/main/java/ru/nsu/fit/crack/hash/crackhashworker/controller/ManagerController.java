@@ -2,6 +2,7 @@ package ru.nsu.fit.crack.hash.crackhashworker.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -17,5 +18,10 @@ public class ManagerController {
     @PostMapping("/internal/api/worker/hash/crack/task")
     public ResponseEntity<Mono<Void>> calcHash(@RequestBody CrackHashManagerRequest crackHashManagerRequest) {
         return ResponseEntity.ok(taskService.runTask(crackHashManagerRequest));
+    }
+
+    @GetMapping
+    public ResponseEntity<Void> healChecker() {
+        return ResponseEntity.ok().build();
     }
 }
