@@ -2,10 +2,10 @@ package ru.nsu.fit.crack.hash.crackhashmanager.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import ru.nsu.fit.crack.hash.crackhashmanager.client.WorkerClient;
 import ru.nsu.fit.crack.hash.crackhashmanager.configuration.properties.ApplicationProperties;
 import ru.nsu.fit.crack.hash.crackhashmanager.mapper.CrackHashMapper;
 import ru.nsu.fit.crack.hash.crackhashmanager.model.Task;
+import ru.nsu.fit.crack.hash.crackhashmanager.rabbitmq.producer.WorkerProducer;
 
 import java.util.stream.IntStream;
 
@@ -14,7 +14,7 @@ import java.util.stream.IntStream;
 public class DistributionService {
     private final ApplicationProperties applicationProperties;
     private final CrackHashMapper crackHashMapper;
-    private final WorkerClient workerClient;
+    private final WorkerProducer workerProducer;
 
     /**
      * Распределение задачи по воркерам для расчета хэша.
@@ -25,6 +25,6 @@ public class DistributionService {
      */
     public void distribution(Task task) {
         IntStream.range(0, applicationProperties.numberWorkers())
-                .forEach(partNumber -> workerClient.send(partNumber, crackHashMapper.mapToDto(task.getId(), partNumber, task)));
+                .forEach(partNumber -> workerProducer.send(crackHashMapper.mapToDto(task.getId(), partNumber, task)));
     }
 }

@@ -1,3 +1,11 @@
+spring:
+  rabbitmq:
+    host: crack-hash-rabbitmq
+    username: guest
+    password: guest
+
 application:
   domain-manager: "http://localhost:8080"
-  processing-time: 60 # Время в секундах
+  queue-name-consumer: "crack-hash-request"
+  exchange-key: "response-key"
+  exchange-name: "crack-hash-exchange"
