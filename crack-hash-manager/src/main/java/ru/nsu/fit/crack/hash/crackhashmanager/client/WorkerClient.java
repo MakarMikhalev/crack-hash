@@ -5,12 +5,14 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 import ru.nsu.fit.crack.hash.crackhashmanager.configuration.properties.ApplicationProperties;
 import ru.nsu.fit.crack.hash.crackhashmanager.dto.worker.CrackHashManagerRequest;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -41,5 +43,19 @@ public class WorkerClient {
             .doOnError(error -> log.error("Ошибка при отправке запроса: {}", error.getMessage()))
             .onErrorResume(error -> Mono.empty());
         mono.subscribeOn(Schedulers.boundedElastic()).subscribe();
+    }
+
+    public Mono<List<Integer>> getNumberCalculatedWord(String keyTask) {
+        String url = "%s/internal/api/worker/hash/task/count/%s";
+        return Flux.fromIterable(mapWorkersUrl.values())
+            .flatMap(worker -> {
+                    log.info("url {}", url.formatted(worker, keyTask));
+                    return webClient.get()
+                        .uri(url.formatted(worker, keyTask))
+                        .retrieve()
+                        .bodyToMono(Integer.class);
+                }
+            )
+            .collectList();
     }
 }

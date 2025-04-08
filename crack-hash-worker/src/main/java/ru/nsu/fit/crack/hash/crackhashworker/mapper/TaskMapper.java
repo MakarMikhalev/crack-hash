@@ -7,6 +7,7 @@ import ru.nsu.fit.crack.hash.crackhashworker.dto.CrackHashWorkerResponse;
 import ru.nsu.fit.crack.hash.crackhashworker.task.CrackHashTask;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @UtilityClass
 public class TaskMapper {
@@ -18,6 +19,7 @@ public class TaskMapper {
             .alphabet(request.getAlphabet().getSymbols())
             .maxLength(request.getMaxLength())
             .hash(request.getHash())
+            .numberWordCounter(new AtomicInteger())
             .build();
     }
 

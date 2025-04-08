@@ -11,8 +11,11 @@ import ru.nsu.fit.crack.hash.crackhashworker.dto.CrackHashManagerRequest;
 import ru.nsu.fit.crack.hash.crackhashworker.dto.CrackHashWorkerResponse;
 import ru.nsu.fit.crack.hash.crackhashworker.mapper.TaskMapper;
 import ru.nsu.fit.crack.hash.crackhashworker.rabbitmq.producer.ManagerProducer;
+import ru.nsu.fit.crack.hash.crackhashworker.task.CrackHashTask;
 
 import java.io.IOException;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
 @Service
@@ -20,9 +23,10 @@ import java.io.IOException;
 public class TaskService {
     private final ManagerProducer managerProducer;
     private final ManagerClient managerClient;
+    private final Map<String, CrackHashTask> tasks = new ConcurrentHashMap<>();
 
     public Mono<Void> runTask(CrackHashManagerRequest request) {
-        return Mono.fromCallable(() -> TaskMapper.mapRequest(request).call())
+        return Mono.fromCallable(() -> createTask(request).call())
             .subscribeOn(Schedulers.boundedElastic())
             .map(words -> TaskMapper.mapResponse(request, words))
             .flatMap(managerClient::sendResultManager)
@@ -31,13 +35,19 @@ public class TaskService {
     }
 
     public Mono<Void> runTask(long tag, Channel channel, CrackHashManagerRequest request) {
-        return Mono.fromCallable(() -> TaskMapper.mapRequest(request).call())
+        return Mono.fromCallable(() -> createTask(request).call())
             .subscribeOn(Schedulers.boundedElastic())
             .doOnNext(words -> log.info("Mapped words: {}", words))
             .map(words -> TaskMapper.mapResponse(request, words))
             .flatMap(message -> sendMessage(tag, channel, message))
             .doOnError(e -> log.error("Error in runTask pipeline", e))
             .then();
+    }
+
+    public int getNumberCalculatedWord(String keyTask) {
+        CrackHashTask crackHashTask = tasks.get(keyTask);
+        log.debug("getNumberCalculatedWord keyTask: {}, value {}", keyTask, crackHashTask);
+        return crackHashTask.numberWordCounter().get();
     }
 
     private Mono<Void> sendMessage(long tag, Channel channel, CrackHashWorkerResponse response) {
@@ -48,5 +58,12 @@ public class TaskService {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private CrackHashTask createTask(CrackHashManagerRequest request) {
+        CrackHashTask task = TaskMapper.mapRequest(request);
+        log.debug("createTask request key: {}, task {}", request.getRequestId(), task);
+        tasks.put(request.getRequestId(), task);
+        return task;
     }
 }

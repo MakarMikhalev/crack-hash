@@ -19,9 +19,14 @@ public record CrackHashTask(
     int partCount,
     String hash,
     int maxLength,
-    List<String> alphabet
+    List<String> alphabet,
+    AtomicInteger numberWordCounter
 ) implements Callable<List<String>> {
     private static final String ALGORITHM_HASH = "MD5";
+
+    public AtomicInteger numberWordCounter() {
+        return numberWordCounter;
+    }
 
     @Override
     public List<String> call() {
@@ -38,7 +43,7 @@ public record CrackHashTask(
         // Шаг 3: Генерация и фильтрация слов
         AtomicInteger atomicOffset = new AtomicInteger(offset);
         AtomicInteger atomicLimit = new AtomicInteger(limit);
-       return IntStream.rangeClosed(1, maxLength)
+        return IntStream.rangeClosed(1, maxLength)
             .boxed()
             .filter(v -> atomicLimit.get() > 0)
             .flatMap(length -> {
@@ -70,6 +75,7 @@ public record CrackHashTask(
             for (byte b : hashInBytes) {
                 hexString.append(String.format("%02x", b));
             }
+            numberWordCounter.incrementAndGet();
             return hexString.toString();
         } catch (NoSuchAlgorithmException e) {
             throw new AlgorithmNotFoundException(ALGORITHM_HASH);

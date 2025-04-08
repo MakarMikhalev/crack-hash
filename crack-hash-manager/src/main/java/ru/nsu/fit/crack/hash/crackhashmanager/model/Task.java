@@ -2,7 +2,6 @@ package ru.nsu.fit.crack.hash.crackhashmanager.model;
 
 import lombok.Getter;
 import lombok.Setter;
-import lombok.With;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import ru.nsu.fit.crack.hash.crackhashmanager.model.enums.TaskStatus;
@@ -29,13 +28,16 @@ public class Task {
 
     private int acknowledge = 0;
 
+    private final int totalWords;
+
     private List<String> words = new ArrayList<>();
 
-    public Task(UUID id, TaskStatus taskStatus, String hash, int maxLength) {
+    public Task(UUID id, TaskStatus taskStatus, String hash, int maxLength, int totalWords) {
         this.maxLength = maxLength;
         this.taskStatus = taskStatus;
         this.hash = hash;
         this.id = id;
+        this.totalWords = totalWords;
     }
 
     public void addWords(List<String> words) {

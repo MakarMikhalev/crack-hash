@@ -9,3 +9,7 @@ application:
   queue-name-consumer: "crack-hash-request"
   exchange-key: "response-key"
   exchange-name: "crack-hash-exchange"
+
+logging:
+  level:
+    ru: debug

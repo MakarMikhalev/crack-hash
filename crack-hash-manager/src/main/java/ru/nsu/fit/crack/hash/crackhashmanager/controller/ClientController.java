@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
 import ru.nsu.fit.crack.hash.crackhashmanager.dto.client.HashRequestDto;
 import ru.nsu.fit.crack.hash.crackhashmanager.dto.client.IdResponseDto;
+import ru.nsu.fit.crack.hash.crackhashmanager.dto.client.TaskDto;
 import ru.nsu.fit.crack.hash.crackhashmanager.model.Task;
 import ru.nsu.fit.crack.hash.crackhashmanager.service.DistributionService;
 import ru.nsu.fit.crack.hash.crackhashmanager.service.ManagerService;
@@ -32,7 +33,7 @@ public class ClientController {
     }
 
     @GetMapping("/api/hash/status/{requestId}")
-    public ResponseEntity<Mono<Task>> getTask(@PathVariable UUID requestId) {
+    public ResponseEntity<Mono<TaskDto>> getTask(@PathVariable UUID requestId) {
         log.info("get task request id {}", requestId);
         return ResponseEntity.ok(taskWorkerService.getTask(requestId));
     }
