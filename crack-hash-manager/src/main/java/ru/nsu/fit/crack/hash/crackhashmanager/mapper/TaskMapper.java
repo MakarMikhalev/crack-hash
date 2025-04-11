@@ -6,13 +6,15 @@ import ru.nsu.fit.crack.hash.crackhashmanager.model.Task;
 
 @Component
 public class TaskMapper {
-    public TaskDto toDto(double percentCalculate, Task task) {
+    private static final String TEMPLATE_PERCENT = "%d%%";
+
+    public TaskDto toDto(long percentCalculate, Task task) {
         return TaskDto.builder()
             .id(task.getId())
             .words(task.getWords())
             .acknowledge(task.getAcknowledge())
             .taskStatus(task.getTaskStatus())
-            .percentCalculate(percentCalculate)
+            .percentCalculate(TEMPLATE_PERCENT.formatted(percentCalculate))
             .hash(task.getHash())
             .maxLength(task.getMaxLength())
             .build();

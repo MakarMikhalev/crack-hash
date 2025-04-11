@@ -24,10 +24,6 @@ public record CrackHashTask(
 ) implements Callable<List<String>> {
     private static final String ALGORITHM_HASH = "MD5";
 
-    public AtomicInteger numberWordCounter() {
-        return numberWordCounter;
-    }
-
     @Override
     public List<String> call() {
         // Шаг 1: Подсчёт общего количества возможных слов
@@ -37,29 +33,39 @@ public record CrackHashTask(
         // Шаг 2: Определение диапазона слов для текущего воркера
         final int partSize = totalWords / partCount;
         final int remainder = totalWords % partCount;
-        final int offset = partSize * partNumber + Math.min(partNumber, remainder);
-        final int limit = partSize + (partNumber < remainder ? 1 : 0);
+        final int startIndex = partSize * partNumber + Math.min(partNumber, remainder);
+        final int wordsToTake = partSize + (partNumber < remainder ? 1 : 0);
 
         // Шаг 3: Генерация и фильтрация слов
-        AtomicInteger atomicOffset = new AtomicInteger(offset);
-        AtomicInteger atomicLimit = new AtomicInteger(limit);
+        AtomicInteger remaining = new AtomicInteger(wordsToTake);
+        AtomicInteger currentIndex = new AtomicInteger(startIndex);
         return IntStream.rangeClosed(1, maxLength)
             .boxed()
-            .filter(v -> atomicLimit.get() > 0)
             .flatMap(length -> {
-                final int wordsOfCurrentLength = (int) Math.pow(alphabet.size(), length);
-                final int wordsToProcess = Math.min(wordsOfCurrentLength, atomicLimit.get());
-                Stream<String> wordsStream = Generator.permutation(alphabet)
+                if (remaining.get() <= 0) return Stream.empty();
+
+                int combinations = (int) Math.pow(alphabetSize, length);
+                if (currentIndex.get() >= combinations) {
+                    currentIndex.addAndGet(-combinations);
+                    return Stream.empty();
+                }
+
+                int skip = currentIndex.get();
+                int limit = Math.min(remaining.get(), combinations - skip);
+
+                Stream<String> stream = Generator.permutation(alphabet)
                     .withRepetitions(length)
                     .stream()
-                    .skip(atomicOffset.get())
-                    .limit(wordsToProcess)
-                    .map(word -> String.join("", word))
+                    .skip(skip)
+                    .limit(limit)
+                    .map(chars -> String.join("", chars))
+                    .peek(word -> numberWordCounter.incrementAndGet())
                     .filter(word -> hash.equals(calcHash(word)));
-                atomicLimit.addAndGet(-wordsToProcess);
-                return wordsStream;
+
+                currentIndex.set(0);
+                remaining.addAndGet(-limit);
+                return stream;
             })
-            .limit(atomicLimit.get())
             .toList();
     }
 
@@ -75,7 +81,6 @@ public record CrackHashTask(
             for (byte b : hashInBytes) {
                 hexString.append(String.format("%02x", b));
             }
-            numberWordCounter.incrementAndGet();
             return hexString.toString();
         } catch (NoSuchAlgorithmException e) {
             throw new AlgorithmNotFoundException(ALGORITHM_HASH);

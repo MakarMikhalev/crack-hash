@@ -53,7 +53,11 @@ public class WorkerClient {
                     return webClient.get()
                         .uri(url.formatted(worker, keyTask))
                         .retrieve()
-                        .bodyToMono(Integer.class);
+                        .bodyToMono(Integer.class)
+                        .onErrorResume(e -> {
+                            log.error("Error calling worker {}: {}", worker, e.getMessage());
+                            return Mono.just(0);
+                        });
                 }
             )
             .collectList();

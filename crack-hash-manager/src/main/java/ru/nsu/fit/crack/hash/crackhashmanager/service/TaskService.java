@@ -65,8 +65,8 @@ public class TaskService {
                     .reduce(0, Integer::sum);
                 Task task = taskRepository.getById(id);
                 double percentCalculate = ((double) sumNumberCalculate / task.getTotalWords()) * 100;
-                log.info("Task percentCalculate {} / {} * 100 = {}", sumNumberCalculate, task.getTotalWords(), percentCalculate);
-                return taskMapper.toDto(percentCalculate, task);
+                long roundPercentCalculate = percentCalculate > 100 ? 100L : Math.round(percentCalculate);
+                return taskMapper.toDto(roundPercentCalculate, task);
             });
     }
 }

@@ -14,6 +14,6 @@ public record TaskDto(
     TaskStatus taskStatus,
     int acknowledge,
     List<String> words,
-    double percentCalculate
+    String percentCalculate
 ) {
 }

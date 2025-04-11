@@ -29,7 +29,7 @@ class ManagerControllerTest {
     @MockitoBean private ManagerClient managerClient;
     @Captor ArgumentCaptor<CrackHashWorkerResponse> argumentCaptor;
 
-    private static final String ALPHABET = "abcd";
+    private static final String ALPHABET = "abcdefghijklmnopqrstuvwxyz";
     private static final String HASH = "e2fc714c4727ee9395f324cd2e7f331f";
     private static final String REQUEST_ID = UUID.randomUUID().toString();
 
@@ -70,9 +70,9 @@ class ManagerControllerTest {
         var alphabet = new CrackHashManagerRequest.Alphabet();
         alphabet.getSymbols().addAll(ALPHABET.chars().mapToObj(c -> String.valueOf((char) c)).toList());
         request.setAlphabet(alphabet);
-        request.setMaxLength(5);
+        request.setMaxLength(4);
         request.setPartCount(3);
-        request.setPartNumber(0);
+        request.setPartNumber(1);
         return request;
     }
 
